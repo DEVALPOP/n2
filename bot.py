@@ -72,7 +72,7 @@ def AddAccount(message):
             _client.connect()
             SendCode = _client.send_code(message.text)
             Mas = bot.send_message(message.chat.id,"*أدخل الرمز المرسل إليك 🔏*",parse_mode="markdown")
-            bot.register_next_step_handler(Mas, sigin_up,_client,message.text,SendCode.phone_code_hash,message.text) 
+            bot.register_next_step_handler(Mas, sigin_up,_client,message.text,SendCode.phone_code_hash,message.text)	
         else:
             Mas = bot.send_message(message.chat.id,"*انتظر جاري الفحص* ⏱")
     except Exception as e:
@@ -81,11 +81,12 @@ def sigin_up(message,_client,phone,hash,name):
     try:
         bot.send_message(message.chat.id,"*انتظر قليلا ⏱*",parse_mode="markdown")
         _client.sign_in(phone, hash, message.text)
-        bot.send_message(message.chat.id,"*تم تاكيد الحساب بنجاح ✅ *",parse_mode="markdown")ses= _client.export_session_string()
+        bot.send_message(message.chat.id,"*تم تاكيد الحساب بنجاح ✅ *",parse_mode="markdown")
+        ses= _client.export_session_string()
         DB.AddAcount(ses,name,message.chat.id)
     except errors.SessionPasswordNeeded:
         Mas = bot.send_message(message.chat.id,"*أدخل كلمة المرور الخاصة بحسابك 🔐*",parse_mode="markdown")
-        bot.register_next_step_handler(Mas, AddPassword,_client,name) 
+        bot.register_next_step_handler(Mas, AddPassword,_client,name)	
 def AddPassword(message,_client,name):
     try:
         _client.check_password(message.text) 
