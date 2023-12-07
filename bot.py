@@ -1,107 +1,115 @@
-from config import Config
-import os,certifi
-from pyrogram import Client,errors
-import telebot
-import threading
+import requests
+import telebot,time
 from telebot import types
-import asyncio
-from backend import app
-from db import database
-
-DB = database()
-App = app()
-os.environ['SSL_CERT_FILE'] = certifi.where() 
-api_id = Config.APP_ID
-api_hash = Config.API_HASH
-TELEGRAM_TOKEN=Config.TG_BOT_TOKEN
-bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=False,num_threads=55,skip_pending=True)
-@bot.message_handler(commands=['start'])
-def Admin(message):
-    AddAccount=types.InlineKeyboardButton("اضافه حساب 🛎",callback_data="AddAccount")
-    Accounts=types.InlineKeyboardButton("اكواد حساباتك 🖲",callback_data="Accounts")
-    a1=types.InlineKeyboardButton("نقل اعضاء 👤😇",callback_data="a1")
-    inline = types.InlineKeyboardMarkup(keyboard=[[a1],[AddAccount],[Accounts]])
-    bot.send_message(message.chat.id,"""*مرحبا بك  👋
-
-اختار ما تريد من الازار اسفل 🔥
-يمكنك نقل اعضاء لجروبك 🛎
-من اي جروب اخر عام  ☄
-
-Creator : @K_F_P *""",reply_markup=inline ,parse_mode="markdown")
-
-@bot.callback_query_handler(lambda call:True)
-def call(call):
-    if call.data =="Accounts":
-        num = DB.accounts()
-        msg=bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"حساباتك المسجلة بلكامل : {num}",parse_mode="markdown")
-    if call.data =="AddAccount":
-        msg=bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="*قوم بارسال الرقم الذي تريد تسليمه مع رمز الدولة الان*📞🎩",parse_mode="markdown")
-        bot.register_next_step_handler(msg, AddAccount)
-    if call.data =="a1":
-        msg=bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="*قوم بارسال رابط الجروب المراد النقل منه *🖲",parse_mode="markdown")
-        bot.register_next_step_handler(msg, statement)
-def statement(message):
-    Fromgrob = message.text
-    msg =bot.send_message(chat_id=message.chat.id,text="*قوم بارسال رابط الجروب المراد النقل له*🛎",parse_mode="markdown")
-    bot.register_next_step_handler(msg, statement2,Fromgrob)
-def statement2(message,Fromgrob):
-    Ingrob = message.text
-    msg=bot.send_message(chat_id=message.chat.id,text="*انتظر قليلا ⏱*",parse_mode="markdown")
-    T = threading.Thread(target=asyncio.run,args=(App.GETuser(Fromgrob,Ingrob),))
-    T.start()
-    T.join()
-    list = T.return_value
-    numUser = len(list)
-    bot.send_message(message.chat.id,f"""*تم حفظ جميع الاعضاء المتاحه بنجاح *✅
-
-*معلومات عملية النقل 🥸😇
-
- الاعضاء المتاحه : {numUser} عضو 😋
-النقل من  : {Fromgrob} 🎒
-النقل الي : {Ingrob} 🧳
-مده الفحص : 1 ثانية ⏱
-
-انتظر الي ان تتم العملية 🎩* """ ,parse_mode="markdown")
-    T = threading.Thread(target=asyncio.run,args=(App.ADDuser(list,Ingrob,message.chat.id,bot),))
-    T.start()
-def AddAccount(message):
-    try:         
-        if "+" in message.text:
-            bot.send_message(message.chat.id,"*انتظر جاري الفحص* ⏱",parse_mode="markdown")
-            _client = Client("::memory::", in_memory=True,api_id=api_id, api_hash=api_hash,lang_code="ar")
-            _client.connect()
-            SendCode = _client.send_code(message.text)
-            Mas = bot.send_message(message.chat.id,"*أدخل الرمز المرسل إليك 🔏*",parse_mode="markdown")
-            bot.register_next_step_handler(Mas, sigin_up,_client,message.text,SendCode.phone_code_hash,message.text)	
-        else:
-            Mas = bot.send_message(message.chat.id,"*انتظر جاري الفحص* ⏱")
-    except Exception as e:
-        bot.send_message(message.chat.id,"ERORR : "+e)
-def sigin_up(message,_client,phone,hash,name):
-    try:
-        bot.send_message(message.chat.id,"*انتظر قليلا ⏱*",parse_mode="markdown")
-        _client.sign_in(phone, hash, message.text)
-        bot.send_message(message.chat.id,"*تم تاكيد الحساب بنجاح ✅ *",parse_mode="markdown")
-        ses= _client.export_session_string()
-        DB.AddAcount(ses,name,message.chat.id)
-    except errors.SessionPasswordNeeded:
-        Mas = bot.send_message(message.chat.id,"*أدخل كلمة المرور الخاصة بحسابك 🔐*",parse_mode="markdown")
-        bot.register_next_step_handler(Mas, AddPassword,_client,name)	
-def AddPassword(message,_client,name):
-    try:
-        _client.check_password(message.text) 
-        ses= _client.export_session_string()
-        DB.AddAcount(ses,name,message.chat.id)
-        try:
-            _client.stop()
-        except:
-            pass
-        bot.send_message(message.chat.id,"*تم تاكيد الحساب بنجاح ✅ *",parse_mode="markdown")
-    except Exception as e:
-        print(e)
-        try:
-            _client.stop()
-        except:
-            pass
-        bot.send_message(message.chat.id,f"ERORR : {e} ")
-bot.infinity_polling(none_stop=True,timeout=15, long_polling_timeout =15)
+from gatet import Tele
+import os
+token = '692cvpi1LmnGwtpiCCJsNHjR2ubNc'
+bot=telebot.TeleBot(token,parse_mode="HTML")
+subscriber =1084525687
+@bot.message_handler(commands=["start"])
+def start(message):
+	if not str(message.chat.id) == '1831414453':
+		bot.reply_to(message, "You cannot use the bot to contact developers to purchase a bot subscription @K_F_P")
+		return
+	bot.reply_to(message,"Send the file now \n ارسل الملف الان")
+@bot.message_handler(content_types=["document"])
+def main(message):
+	if not str(message.chat.id) == '1831414453':
+		bot.reply_to(message, "You cannot use the bot to contact developers to purchase a bot subscription @K_F_P")
+		return
+	dd = 0
+	live = 0
+	ch = 0
+	ko = (bot.reply_to(message, "Checking Your Cards...⌛").message_id)
+	ee = bot.download_file(bot.get_file(message.document.file_id).file_path)
+	with open("combo.txt", "wb") as w:
+		w.write(ee)
+	try:
+		with open("combo.txt", 'r') as file:
+			lino = file.readlines()
+			total = len(lino)
+			for cc in lino:
+				current_dir = os.getcwd()
+				for filename in os.listdir(current_dir):
+					if filename.endswith(".stop"):
+						bot.edit_message_text(chat_id=message.chat.id, message_id=ko, text='𝗦𝗧𝗢𝗣𝗣𝗘𝗗 ✅\n𝗕𝗢𝗧 𝗕𝗬 ➜ @MNOW4')
+						os.remove('stop.stop')
+						return
+				try:
+					data = requests.get('https://lookup.binlist.net/'+cc[:6]).json()
+					
+				except:
+					pass
+				try:
+					bank=(data['bank']['name'])
+				except:
+					bank=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				try:
+					emj=(data['country']['emoji'])
+				except:
+					emj=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				try:
+					cn=(data['country']['name'])
+				except:
+					cn=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				try:
+					dicr=(data['scheme'])
+				except:
+					dicr=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				try:
+					typ=(data['type'])
+				except:
+					typ=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				try:
+					url=(data['bank']['url'])
+				except:
+					url=('𝒖𝒏𝒌𝒏𝒐𝒘𝒏')
+				
+				
+				try:
+					last = str(Tele(cc))
+				except Exception as e:
+					print(e)
+					last = "ERROR"
+				if 'risk' in last:
+					last='declined'
+				elif 'Duplicate' in last:
+					last='Approved'
+				mes = types.InlineKeyboardMarkup(row_width=1)
+				cm1 = types.InlineKeyboardButton(f"• {cc} •", callback_data='u8')
+				status = types.InlineKeyboardButton(f"• 𝗦𝗧𝗔𝗧𝗨𝗦 ➜ {last} •", callback_data='u8')
+				cm3 = types.InlineKeyboardButton(f"• 𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗 ✅ ➜ [ {live} ] •", callback_data='x')
+				cm4 = types.InlineKeyboardButton(f"• 𝗗𝗘𝗖𝗟𝗜𝗡𝗘𝗗 ❌ ➜ [ {dd} ] •", callback_data='x')
+				cm5 = types.InlineKeyboardButton(f"• 𝗧𝗢𝗧𝗔𝗟 👻 ➜ [ {total} ] •", callback_data='x')
+				stop=types.InlineKeyboardButton(f"[ 𝐒𝐓𝐎𝐏 ]", callback_data='stop')
+				mes.add(cm1,status, cm3, cm4, cm5, stop)
+				bot.edit_message_text(chat_id=message.chat.id, message_id=ko, text='''Wait for processing 
+𝒃𝒚 ➜ @MNOW4 ''', reply_markup=mes)
+				msg = f'''◆ 𝑪𝑨𝑹𝑫  ➜ {cc} 
+◆ 𝑺𝑻𝑨𝑻𝑼𝑺 ➜ 𝗔𝗽𝗽𝗿𝗼𝘃𝗲𝗱  ✅ 
+◆ 𝑹𝑬𝑺𝑼𝑳𝑻 ➜ #Approved
+◆ 𝑮𝑨𝑻𝑬𝑾𝑨𝒀 ➜ 𝙱𝚁𝙰𝙸𝙽𝚃𝚁𝙴𝙴 𝙰𝚄𝚃𝙷 
+━━━━━━━━━━━━━━━━━
+◆ 𝑩𝑰𝑵 ➜ {cc[:6]} - {dicr} - {typ} 
+◆ 𝑪𝑶𝑼𝑵𝑻𝑹𝒀 ➜ {cn} - {emj} 
+◆ 𝑩𝑨𝑵𝑲 ➜ {bank}
+◆ 𝑼𝑹𝑳 ➜ {url}
+━━━━━━━━━━━━━━━━━
+◆ 𝑩𝒀: @K_F_P
+◆𝑷𝑹𝑶𝑿𝒀𝑺: 𝑷𝑹𝑶𝑿𝒀 𝑳𝑰𝑽𝑬 ✅ '''
+				print(last)
+				if "live" in last or 'Approved' in last:
+					live += 1
+					bot.reply_to(message, msg)
+				else:
+					dd += 1
+				time.sleep(21)
+	except Exception as e:
+		print(e)
+	bot.edit_message_text(chat_id=message.chat.id, message_id=ko, text='𝗕𝗘𝗘𝗡 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘𝗗 ✅\n𝗕𝗢𝗧 𝗕𝗬 ➜ @MNOW4')
+@bot.callback_query_handler(func=lambda call: call.data == 'stop')
+def menu_callback(call):
+	with open("stop.stop", "w") as file:
+		pass
+print("تم تشغيل البوت")
+bot.polling()
