@@ -8,7 +8,7 @@
 		"python",
 		"telethon"
 	],
-	"repository": "https://github.com/Source-Ze/temp",
+	"repository": "https://github.com/almanybasja/transfer",
     "env": {
         "TG_BOT_TOKEN": {
             "description": "Your Telegram Bot Token from @BotFather",
