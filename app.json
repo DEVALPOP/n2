@@ -1,14 +1,14 @@
 {
 	"name": "TempMail",
 	"description": "A TeleGramBot to send messages secretly!",
-	"logo": "https://telegra.ph/file/5116db79f852db113875c.jpg",
+	"logo": "https://telegra.ph/file/c4a94f88442f82a2af027.jpg",
 	"keywords": [
 		"telegram",
 		"bot",
 		"python",
 		"telethon"
 	],
-	"repository": "https://github.com/almanybasja/transfer",
+	"repository": "https://github.com/DEVALPOP/n2",
     "env": {
         "TG_BOT_TOKEN": {
             "description": "Your Telegram Bot Token from @BotFather",
