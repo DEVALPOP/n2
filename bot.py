@@ -27,7 +27,7 @@ def Admin(message):
 يمكنك نقل اعضاء لجروبك 🛎
 من اي جروب اخر عام  ☄
 
-Creator : @ALMA1NY *""",reply_markup=inline ,parse_mode="markdown")
+Creator : @V_9_G @BARALPOP *""",reply_markup=inline ,parse_mode="markdown")
 
 @bot.callback_query_handler(lambda call:True)
 def call(call):
